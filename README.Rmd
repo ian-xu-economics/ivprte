@@ -1,0 +1,1353 @@
+---
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+<!-- badges: start -->
+![status](https://img.shields.io/badge/status-under%20construction-yellow)
+<!-- badges: end -->
+
+
+```{r setup, echo = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment  = "#>")
+```
+
+## Introduction
+
+The `ReplicateMST2018` package...
+
+## Installation
+
+The `ReplicateMST2018` package is hosted on GitHub at https://github.com/ian-xu-economics/ReplicateMST2018/. It can be installed using the `remotes::install_github()` function:
+``` r
+# install.packages("remotes")
+remotes::install_github("ian-xu-economics/ReplicateMST2018")
+```
+
+## Using `ReplicateMST2018`
+
+After installing `ReplicateMST2018`, we can attach the package to our session using the base `library()` function. We'll also attach some other packages needed to run the examples in the vignette. 
+```{r, eval = F}
+library(ReplicateMST2018)
+library(tidyverse)
+library(glue)
+library(latex2exp)
+```
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+library(tidyverse)
+library(glue)
+library(latex2exp)
+devtools::load_all()
+```
+
+## Replicating Figures
+
+In order to produce the figures in Mogstad, Santos, and Torgovitsky (2018), we first need to define the data generating process (DGP). We'll save the DGP used in the paper into `dgp`.
+```{r}
+dgp <- dgp_MST2018()
+```
+
+### Figure 1
+```{r, echo = FALSE, warning=FALSE, fig.height=5, fig.width = 7, fig.dpi=300}
+# Evaluate DGP MTRs at different points u
+u <- round(seq(0, 1, 0.01), 2)
+
+mtr_df <- data.frame(u,
+                     m0_values = evaluate_mtr(mtr = dgp$mtrs[[1]], u),
+                     m1_values = evaluate_mtr(mtr = dgp$mtrs[[2]], u)) %>%
+  pivot_longer(cols = c("m0_values",
+                        "m1_values"),
+               names_to = "d",
+               names_pattern = "m(\\d)_values",
+               values_to = "DGP_MTRs")
+
+# Get weights data frame
+ivslope_weight <- compute_average_weights_ivlike(ivslope(dgp), 
+                                                 dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "ivslope")
+
+LATE_weight <- compute_average_weights(tp = "LATE",
+                                       dgp = dgp,
+                                       late.lb = 0.35,
+                                       late.ub = 0.9) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "LATE")
+
+data <- mtr_df %>%
+  full_join(LATE_weight,
+            by = c("u", "d")) %>%
+  full_join(ivslope_weight,
+            by = c("u", "d"))
+
+figure.1 = ggplot(data, aes(x = u)) + 
+  geom_line(aes(y = (DGP_MTRs - 0.5)*9, color = "DGP MTRs"), linewidth = 1) + 
+  geom_line(data = filter(data, LATE != 0), 
+            aes(y = LATE, color = "LATE(0.35, 0.9)")) + 
+  geom_point(data = filter(data, LATE != 0, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(y = LATE, color = "LATE(0.35, 0.9)", shape = "LATE(0.35, 0.9)")) + 
+  geom_segment(data = filter(data, abs(ivslope) > 1e-12), 
+               aes(y = ivslope, xend = 0.6, color = "IV slope")) + 
+  geom_point(data = filter(data, abs(ivslope) > 1e-12, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(y = ivslope, color = "IV slope", shape = "IV slope")) + 
+  scale_x_continuous(limits = c(0,1),
+                     breaks = seq(0, 1, 0.2),
+                     labels = seq(0, 1, 0.2)) + 
+  scale_y_continuous(TeX("Weights (where \\neq 0)"),
+                     limits = c(-4.5, 4.5),
+                     breaks = seq(-4, 4, 2),
+                     sec.axis = sec_axis(transform = ~ ./9 + 0.5,
+                                         name = "MTR",
+                                         labels = seq(0, 1, 0.25))) + 
+  scale_color_manual(name = NULL,
+                     breaks = c("DGP MTRs", "LATE(0.35, 0.9)", "IV slope"),
+                     values = c("black", "red", "blue")) + 
+  scale_shape_discrete(name = NULL,
+                       breaks = NULL) + 
+  theme(legend.position = "bottom",
+        text = element_text(family = "LM Roman 10", size = 12),
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = "transparent", color = NA),
+        axis.line = element_line(color = "black"),
+        strip.background = element_rect(fill = "transparent", color = NA),
+        plot.title = element_text(hjust = 0.5)) +
+  facet_grid(cols = vars(d),
+             labeller = labeller(d = c("0" = "d = 0", "1" = "d = 1")))
+
+figure.1
+```
+
+### Figure 2
+```{r, echo = FALSE, warning=FALSE, fig.height=5, fig.width = 7, fig.dpi=300}
+ivslope_weight <- compute_average_weights_ivlike(ivslope(dgp), 
+                                                 dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "ivslope")
+
+LATE_weight <- compute_average_weights(tp = "LATE",
+                                       dgp,
+                                       late.lb = 0.35,
+                                       late.ub = 0.9) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "LATE")
+
+data <- ivslope_weight %>%
+  full_join(LATE_weight,
+            by = c("u", "d"))
+
+bounds2 = compute_bounds(tp = late(dgp = dgp, u1 = 0.35, u2 = 0.9), 
+            bases = list(constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ)),
+                         constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ))),
+            dgp = dgp,
+            assumptions = list("ivslope"))
+
+upperbound = signif(bounds2$upper_bound, digits = 3)
+lowerbound = signif(bounds2$lower_bound, digits = 3)
+
+uPoints <- c(0, 1, 0.35, 0.9, dgp$pscoreZ) %>%
+  unique() %>%
+  sort()
+
+constant_spline_weight <- data.frame(uStart = head(uPoints, -1),
+                                     uEnd = tail(uPoints, -1),
+                                     avgWeightD0 = bounds2$upper_solution_d0,
+                                     avgWeightD1 = bounds2$upper_solution_d1) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "Maximizing_MTRs")
+
+constant_spline_weight_expanded <- data.frame(uStart = head(uPoints, -1),
+                                              uEnd = tail(uPoints, -1),
+                                              avgWeightD0 = bounds2$upper_solution_d0,
+                                              avgWeightD1 = bounds2$upper_solution_d1) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "Maximizing_MTRs")
+
+figure.2 <- ggplot() +
+  geom_segment(data = constant_spline_weight,
+               aes(x = uStart,
+                   xend = uEnd,
+                   y = (Maximizing_MTRs-0.5)*9,
+                   yend = (Maximizing_MTRs-0.5)*9,
+                   color = "Maximizing MTRs"),
+               linewidth = 1) + 
+  geom_point(data = filter(constant_spline_weight_expanded, Maximizing_MTRs != 0, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = (Maximizing_MTRs-0.5)*9, color = "Maximizing MTRs", shape = "Maximizing MTRs")) + 
+  geom_line(data = filter(data, LATE != 0), 
+            aes(x = u, y = LATE, color = "LATE(0.35, 0.9)")) + 
+  geom_point(data = filter(data, LATE != 0, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = LATE, color = "LATE(0.35, 0.9)", shape = "LATE(0.35, 0.9)")) + 
+  geom_segment(data = filter(data, abs(ivslope) > 1e-12), 
+               aes(x = u, y = ivslope, xend = 0.6, color = "IV slope")) + 
+  geom_point(data = filter(data, abs(ivslope) > 1e-12, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = ivslope, color = "IV slope", shape = "IV slope")) + 
+  scale_x_continuous(name = "u",
+                     limits = c(0,1),
+                     breaks = seq(0, 1, 0.2),
+                     labels = seq(0, 1, 0.2)) + 
+  scale_y_continuous(TeX("Weights (where \\neq 0)"),
+                     limits = c(-4.5, 4.5),
+                     breaks = seq(-4, 4, 2),
+                     sec.axis = sec_axis(transform = ~ ./9 + 0.5,
+                                         name = "MTR",
+                                         labels = seq(0, 1, 0.25))) + 
+  scale_color_manual(name = NULL,
+                     labels = c("Maximizing MTRs", "LATE(0.35, 0.9)", "IV slope"),
+                     breaks = c("Maximizing MTRs", "LATE(0.35, 0.9)", "IV slope"),
+                     values = c("black", "red", "blue")) + 
+  scale_shape_manual(name = NULL,
+                     labels = c("Maximizing MTRs", "LATE(0.35, 0.9)", "IV slope"),
+                     breaks = c("Maximizing MTRs", "LATE(0.35, 0.9)", "IV slope"),
+                     values = c(NA, 16, 17)) + 
+  theme(legend.position = "bottom",
+        text = element_text(family = "LM Roman 10", size = 12),
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = "transparent", color = NA),
+        axis.line = element_line(color = "black"),
+        strip.background = element_rect(fill = "transparent", color = NA),
+        plot.title = element_text(hjust = 0.5)) +
+  facet_grid(cols = vars(d),
+             labeller = labeller(d = c("0" = "d = 0", "1" = "d = 1"))) + 
+  ggtitle(glue("Nonparametric bounds: [{lowerbound}, {upperbound}]"))
+
+figure.2
+```
+
+### Figure 3
+```{r, echo = FALSE, warning=FALSE, fig.height=5, fig.width = 7, fig.dpi=300}
+olsslope_weight = compute_average_weights_ivlike(olsslope(dgp), 
+                                                 dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "olsslope")
+
+olsslope_weight_expanded = compute_average_weights_ivlike(olsslope(dgp), 
+                                                          dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "olsslope")
+
+ivslope_weight <- compute_average_weights_ivlike(ivslope(dgp), 
+                                                 dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "ivslope")
+
+LATE_weight <- compute_average_weights(tp = "LATE",
+                                       dgp,
+                                       late.lb = 0.35,
+                                       late.ub = 0.9) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "LATE")
+
+data <- ivslope_weight %>%
+  full_join(LATE_weight,
+            by = c("u", "d")) %>%
+  full_join(olsslope_weight_expanded,
+            by = c("u", "d"))
+
+bounds3 = compute_bounds(tp = late(dgp = dgp, u1 = 0.35, u2 = 0.9), 
+                         bases = list(constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ)),
+                                      constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ))),
+                         dgp = dgp,
+                         assumptions = list("ivslope", "olsslope"))
+
+upperbound = signif(bounds3$upper_bound, digits = 3)
+lowerbound = signif(bounds3$lower_bound, digits = 3)
+
+uPoints <- c(0, 1, 0.35, 0.9, dgp$pscoreZ) %>%
+  unique() %>%
+  sort()
+
+constant_spline_weight <- data.frame(uStart = head(uPoints, -1),
+                                     uEnd = tail(uPoints, -1),
+                                     avgWeightD0 = bounds3$upper_solution_d0,
+                                     avgWeightD1 = bounds3$upper_solution_d1) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "Maximizing_MTRs")
+
+constant_spline_weight_expanded <- data.frame(uStart = head(uPoints, -1),
+                                              uEnd = tail(uPoints, -1),
+                                              avgWeightD0 = bounds3$upper_solution_d0,
+                                              avgWeightD1 = bounds3$upper_solution_d1) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "Maximizing_MTRs")
+
+figure.3 <- ggplot() +
+  geom_segment(data = constant_spline_weight,
+               aes(x = uStart,
+                   xend = uEnd,
+                   y = (Maximizing_MTRs-0.5)*9,
+                   yend = (Maximizing_MTRs-0.5)*9,
+                   color = "Maximizing MTRs"),
+               linewidth = 1) + 
+  geom_point(data = filter(constant_spline_weight_expanded, Maximizing_MTRs != 0, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = (Maximizing_MTRs-0.5)*9, color = "Maximizing MTRs", shape = "Maximizing MTRs")) + 
+  geom_line(data = filter(data, LATE != 0), 
+            aes(x = u, y = LATE, color = "LATE(0.35, 0.9)")) + 
+  geom_point(data = filter(data, LATE != 0, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = LATE, color = "LATE(0.35, 0.9)", shape = "LATE(0.35, 0.9)")) + 
+  geom_segment(data = filter(data, abs(ivslope) > 1e-12), 
+               aes(x = u, y = ivslope, xend = 0.6, color = "IV slope")) + 
+  geom_point(data = filter(data, abs(ivslope) > 1e-12, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = ivslope, color = "IV slope", shape = "IV slope")) + 
+  geom_segment(data = filter(olsslope_weight, abs(olsslope) > 1e-12),
+               aes(x = uStart, xend = uEnd, y = olsslope, color = "OLS slope")) + 
+  geom_point(data = filter(olsslope_weight_expanded, abs(olsslope) > 1e-12, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = olsslope, color = "OLS slope", shape = "OLS slope")) + 
+  scale_x_continuous(name = "u",
+                     limits = c(0,1),
+                     breaks = seq(0, 1, 0.2),
+                     labels = seq(0, 1, 0.2)) + 
+  scale_y_continuous(TeX("Weights (where \\neq 0)"),
+                     limits = c(-4.5, 4.5),
+                     breaks = seq(-4, 4, 2),
+                     sec.axis = sec_axis(transform = ~ ./9 + 0.5,
+                                         name = "MTR",
+                                         labels = seq(0, 1, 0.25))) + 
+  scale_color_manual(name = NULL,
+                     labels = c("Maximizing MTRs", "LATE(0.35, 0.9)", "IV slope", "OLS slope"),
+                     breaks = c("Maximizing MTRs", "LATE(0.35, 0.9)", "IV slope", "OLS slope"),
+                     values = c("black", "red", "blue", "orange")) + 
+  scale_shape_manual(name = NULL,
+                     labels = c("Maximizing MTRs", "LATE(0.35, 0.9)", "IV slope", "OLS slope"),
+                     breaks = c("Maximizing MTRs", "LATE(0.35, 0.9)", "IV slope", "OLS slope"),
+                     values = c(NA, 16, 17, 18)) + 
+  theme(legend.position = "bottom",
+        text = element_text(family = "LM Roman 10", size = 12),
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = "transparent", color = NA),
+        axis.line = element_line(color = "black"),
+        strip.background = element_rect(fill = "transparent", color = NA),
+        plot.title = element_text(hjust = 0.5)) +
+  facet_grid(cols = vars(d),
+             labeller = labeller(d = c("0" = "d = 0", "1" = "d = 1"))) + 
+  ggtitle(glue("Nonparametric bounds: [{lowerbound}, {upperbound}]"))
+ 
+figure.3
+```
+
+### Figure 4
+```{r, echo = FALSE, warning=FALSE, fig.height=5, fig.width = 7, fig.dpi=300}
+ivslope_ind = ivslope_indicator(dgp = dgp, c(1,2))
+
+ivslope_indZ1 = compute_average_weights_ivlike(list(name = "IV Slope, Z=1", 
+                                                    s = ivslope_ind$s[[1]]), 
+                                               dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "ivslopeZ1")
+
+ivslope_indZ1_expanded = compute_average_weights_ivlike(list(name = "IV Slope, Z=1", 
+                                                             s = ivslope_ind$s[[1]]), 
+                                                        dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "ivslopeZ1")
+
+ivslope_indZ2 = compute_average_weights_ivlike(list(name = "IV Slope, Z=2", 
+                                                    s = ivslope_ind$s[[2]]), 
+                                               dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "ivslopeZ2")
+
+ivslope_indZ2_expanded = compute_average_weights_ivlike(list(name = "IV Slope, Z=2", 
+                                                             s = ivslope_ind$s[[2]]), 
+                                                        dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "ivslopeZ2")
+
+LATE_weight <- compute_average_weights(tp = "LATE",
+                                       dgp,
+                                       late.lb = 0.35,
+                                       late.ub = 0.9) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "LATE")
+
+LATE_weight_expanded <- compute_average_weights(tp = "LATE",
+                                                dgp,
+                                                late.lb = 0.35,
+                                                late.ub = 0.9) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "LATE")
+
+data <- ivslope_indZ1_expanded %>%
+  full_join(ivslope_indZ2_expanded,
+            by = c("u", "d")) %>%
+  full_join(LATE_weight_expanded,
+            by = c("u", "d"))
+
+bounds4 = compute_bounds(tp = late(dgp = dgp, u1 = 0.35, u2 = 0.9), 
+                         bases = list(constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ)),
+                                      constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ))),
+                         dgp = dgp,
+                         assumptions = list("ivslopeind, {1,2}"))
+
+upperbound = signif(bounds4$upper_bound, digits = 3)
+lowerbound = signif(bounds4$lower_bound, digits = 3)
+
+uPoints <- c(0, 1, 0.35, 0.9, dgp$pscoreZ) %>%
+  unique() %>%
+  sort()
+
+constant_spline_weight <- data.frame(uStart = head(uPoints, -1),
+                                     uEnd = tail(uPoints, -1),
+                                     avgWeightD0 = bounds4$upper_solution_d0,
+                                     avgWeightD1 = bounds4$upper_solution_d1) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "Maximizing_MTRs")
+
+constant_spline_weight_expanded <- data.frame(uStart = head(uPoints, -1),
+                                              uEnd = tail(uPoints, -1),
+                                              avgWeightD0 = bounds4$upper_solution_d0,
+                                              avgWeightD1 = bounds4$upper_solution_d1) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "Maximizing_MTRs")
+
+figure.4 <- ggplot() +
+  geom_segment(data = constant_spline_weight,
+               aes(x = uStart,
+                   xend = uEnd,
+                   y = (Maximizing_MTRs-0.5)*12,
+                   yend = (Maximizing_MTRs-0.5)*12,
+                   color = "Maximizing MTRs"),
+               linewidth = 1) + 
+  geom_point(data = filter(constant_spline_weight_expanded, Maximizing_MTRs != 0, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = (Maximizing_MTRs-0.5)*12, color = "Maximizing MTRs", shape = "Maximizing MTRs")) + 
+  geom_line(data = filter(data, LATE != 0), 
+            aes(x = u, y = LATE, color = "LATE(0.35, 0.9)")) + 
+  geom_point(data = filter(data, LATE != 0, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = LATE, color = "LATE(0.35, 0.9)", shape = "LATE(0.35, 0.9)")) + 
+  geom_segment(data = filter(data, abs(ivslopeZ1) > 1e-12), 
+               aes(x = u, y = ivslopeZ1, xend = 0.6, color = "IV slope Z1")) + 
+  geom_point(data = filter(data, abs(ivslopeZ1) > 1e-12, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = ivslopeZ1, color = "IV slope Z1", shape = "IV slope Z1")) + 
+  geom_segment(data = filter(data, abs(ivslopeZ2) > 1e-12), 
+               aes(x = u, y = ivslopeZ2, xend = 0.6, color = "IV slope Z2")) + 
+  geom_point(data = filter(data, abs(ivslopeZ2) > 1e-12, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = ivslopeZ2, color = "IV slope Z2", shape = "IV slope Z2")) + 
+  scale_x_continuous(name = "u",
+                     limits = c(0,1),
+                     breaks = seq(0, 1, 0.2),
+                     labels = seq(0, 1, 0.2)) + 
+  scale_y_continuous(TeX("Weights (where \\neq 0)"),
+                     limits = c(-6, 6),
+                     breaks = seq(-6, 6, 2),
+                     sec.axis = sec_axis(transform = ~ ./12 + 0.5,
+                                         name = "MTR",
+                                         labels = seq(0, 1, 0.25))) + 
+  scale_color_manual(name = NULL,
+                     labels = c("Maximizing MTRs", "LATE(0.35, 0.9)", "IV slope (1[Z=1])", "IV slope (1[Z=2])"),
+                     breaks = c("Maximizing MTRs", "LATE(0.35, 0.9)", "IV slope Z1", "IV slope Z2"),
+                     values = c("black", "red", "blue", "orange")) + 
+  scale_shape_manual(name = NULL,
+                     labels = c("Maximizing MTRs", "LATE(0.35, 0.9)", "IV slope (1[Z=1])", "IV slope (1[Z=2])"),
+                     breaks = c("Maximizing MTRs", "LATE(0.35, 0.9)", "IV slope Z1", "IV slope Z2"),
+                     values = c(NA, 16, 17, 18)) + 
+  theme(legend.position = "bottom",
+        text = element_text(family = "LM Roman 10", size = 12),
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = "transparent", color = NA),
+        axis.line = element_line(color = "black"),
+        strip.background = element_rect(fill = "transparent", color = NA),
+        plot.title = element_text(hjust = 0.5)) +
+  facet_grid(cols = vars(d),
+             labeller = labeller(d = c("0" = "d = 0", "1" = "d = 1"))) + 
+  ggtitle(glue("Nonparametric bounds: [{lowerbound}, {upperbound}]"))
+
+figure.4
+```
+
+### Figure 5
+```{r, echo = FALSE, warning=FALSE, fig.height=5, fig.width = 7, fig.dpi=300}
+s_ivlike = make_slist(dgp)
+
+d0z0_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[1]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z0")
+
+d1z0_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[2]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z0")
+
+d0z1_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[3]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z1")
+
+d1z1_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[4]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z1")
+
+d0z2_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[5]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z2")
+
+d1z2_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[6]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z2")
+
+d0z0_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[1]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z0")
+
+d1z0_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[2]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z0")
+
+d0z1_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[3]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z1")
+
+d1z1_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[4]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z1")
+
+d0z2_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[5]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z2")
+
+d1z2_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[6]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z2")
+
+
+LATE_weight <- compute_average_weights(tp = "LATE",
+                                       dgp,
+                                       late.lb = 0.35,
+                                       late.ub = 0.9) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "LATE")
+
+LATE_weight_expanded <- compute_average_weights(tp = "LATE",
+                                                dgp,
+                                                late.lb = 0.35,
+                                                late.ub = 0.9) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "LATE")
+
+data <- d0z0_weight_expanded %>%
+  full_join(d1z0_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(d0z1_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(d1z1_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(d0z2_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(d1z2_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(LATE_weight_expanded,
+            by = c("u", "d"))
+
+bounds5 = compute_bounds(tp = late(dgp = dgp, u1 = 0.35, u2 = 0.9), 
+                         bases = list(constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ)),
+                                      constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ))),
+                         dgp = dgp,
+                         assumptions = list("saturated"))
+
+upperbound = signif(bounds5$upper_bound, digits = 3)
+lowerbound = signif(bounds5$lower_bound, digits = 3)
+
+uPoints <- c(0, 1, 0.35, 0.9, dgp$pscoreZ) %>%
+  unique() %>%
+  sort()
+
+constant_spline_weight <- data.frame(uStart = head(uPoints, -1),
+                                     uEnd = tail(uPoints, -1),
+                                     avgWeightD0 = bounds5$upper_solution_d0,
+                                     avgWeightD1 = bounds5$upper_solution_d1) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "Maximizing_MTRs")
+
+constant_spline_weight_expanded <- data.frame(uStart = head(uPoints, -1),
+                                              uEnd = tail(uPoints, -1),
+                                              avgWeightD0 = bounds5$upper_solution_d0,
+                                              avgWeightD1 = bounds5$upper_solution_d1) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "Maximizing_MTRs")
+
+figure.5 <- ggplot() +
+  geom_segment(data = constant_spline_weight,
+               aes(x = uStart,
+                   xend = uEnd,
+                   y = (Maximizing_MTRs-0.5)*6,
+                   yend = (Maximizing_MTRs-0.5)*6,
+                   color = "Maximizing MTRs"),
+               linewidth = 1) + 
+  geom_point(data = filter(constant_spline_weight_expanded, Maximizing_MTRs != 0, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = (Maximizing_MTRs-0.5)*12, color = "Maximizing MTRs", shape = "Maximizing MTRs")) + 
+  geom_line(data = filter(data, LATE != 0), 
+            aes(x = u, y = LATE, color = "LATE(0.35, 0.9)")) + 
+  geom_point(data = filter(data, LATE != 0, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = LATE, color = "LATE(0.35, 0.9)", shape = "LATE(0.35, 0.9)")) + 
+  geom_segment(data = filter(d0z0_weight, abs(d0z0) > 1e-12), 
+               aes(x = uStart, xend = uEnd, y = d0z0, color = "D0Z0")) + 
+  geom_point(data = filter(data, abs(d0z0) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d0z0, color = "D0Z0", shape = "D0Z0")) +
+  geom_segment(data = filter(d1z0_weight, abs(d1z0) > 1e-12), 
+               aes(x = uStart, xend = uEnd, y = d1z0, color = "D1Z0")) + 
+  geom_point(data = filter(data, abs(d1z0) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d1z0, color = "D1Z0", shape = "D1Z0")) +
+  geom_segment(data = filter(d0z1_weight, abs(d0z1) > 1e-12), 
+             aes(x = uStart, xend = uEnd, y = d0z1, color = "D0Z1")) + 
+  geom_point(data = filter(data, abs(d0z1) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d0z1, color = "D0Z1", shape = "D0Z1")) +
+  geom_segment(data = filter(d1z1_weight, abs(d1z1) > 1e-12), 
+               aes(x = uStart, xend = uEnd, y = d1z1, color = "D1Z1")) + 
+  geom_point(data = filter(data, abs(d1z1) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d1z1, color = "D1Z1", shape = "D1Z1")) +
+    geom_segment(data = filter(d0z2_weight, abs(d0z2) > 1e-12), 
+             aes(x = uStart, xend = uEnd, y = d0z2, color = "D0Z2")) + 
+  geom_point(data = filter(data, abs(d0z2) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d0z2, color = "D0Z2", shape = "D0Z2")) +
+  geom_segment(data = filter(d1z2_weight, abs(d1z2) > 1e-12), 
+               aes(x = uStart, xend = uEnd, y = d1z2, color = "D1Z2")) + 
+  geom_point(data = filter(data, abs(d1z2) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d1z2, color = "D1Z2", shape = "D1Z2")) +
+  scale_x_continuous(name = "u",
+                     limits = c(0,1),
+                     breaks = seq(0, 1, 0.2),
+                     labels = seq(0, 1, 0.2)) + 
+  scale_y_continuous(TeX("Weights (where \\neq 0)"),
+                     limits = c(-3, 3),
+                     breaks = seq(-2, 2, 2),
+                     sec.axis = sec_axis(transform = ~ ./6 + 0.5,
+                                         name = "MTR",
+                                         labels = seq(0, 1, 0.25))) + 
+  scale_color_manual(name = NULL,
+                     labels = c("Maximizing MTRs", 
+                                "LATE(0.35, 0.9)", 
+                                TeX("$(1-D) \\times 1[Z=0]$"), 
+                                TeX("$D \\times 1[Z=0]$"),
+                                TeX("$(1-D) \\times 1[Z=1]$"), 
+                                TeX("$D \\times 1[Z=1]$"),
+                                TeX("$(1-D) \\times 1[Z=2]$"), 
+                                TeX("$D \\times 1[Z=2]$")),
+                     breaks = c("Maximizing MTRs", 
+                                "LATE(0.35, 0.9)", 
+                                "D0Z0", 
+                                "D1Z0", 
+                                "D0Z1", 
+                                "D1Z1",
+                                "D0Z2", 
+                                "D1Z2"),
+                     values = c("black", "red", "blue", "orange", "brown", "green", "pink", "darkgreen")) + 
+  scale_shape_manual(name = NULL,
+                     labels = c("Maximizing MTRs", 
+                                "LATE(0.35, 0.9)", 
+                                TeX("$(1-D) \\times 1[Z=0]$"), 
+                                TeX("$D \\times 1[Z=0]$"),
+                                TeX("$(1-D) \\times 1[Z=1]$"), 
+                                TeX("$D \\times 1[Z=1]$"),
+                                TeX("$(1-D) \\times 1[Z=2]$"), 
+                                TeX("$D \\times 1[Z=2]$")),
+                     breaks = c("Maximizing MTRs", 
+                                "LATE(0.35, 0.9)", 
+                                "D0Z0", 
+                                "D1Z0", 
+                                "D0Z1", 
+                                "D1Z1",
+                                "D0Z2", 
+                                "D1Z2"),
+                     values = c(NA, 16, 17, 18, 10, 11, 12, 13)) + 
+  theme(legend.position = "bottom",
+        text = element_text(family = "LM Roman 10", size = 12),
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = "transparent", color = NA),
+        axis.line = element_line(color = "black"),
+        strip.background = element_rect(fill = "transparent", color = NA),
+        plot.title = element_text(hjust = 0.5)) +
+  facet_grid(cols = vars(d),
+             labeller = labeller(d = c("0" = "d = 0", "1" = "d = 1"))) + 
+  ggtitle(glue("Nonparametric bounds: [{lowerbound}, {upperbound}]"))
+
+figure.5
+```
+   
+### Figure 6
+```{r, echo = FALSE, warning=FALSE, fig.height=5, fig.width = 7, fig.dpi=300}
+s_ivlike = make_slist(dgp)
+
+d0z0_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[1]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z0")
+
+d1z0_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[2]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z0")
+
+d0z1_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[3]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z1")
+
+d1z1_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[4]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z1")
+
+d0z2_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[5]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z2")
+
+d1z2_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[6]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z2")
+
+d0z0_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[1]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z0")
+
+d1z0_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[2]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z0")
+
+d0z1_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[3]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z1")
+
+d1z1_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[4]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z1")
+
+d0z2_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[5]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z2")
+
+d1z2_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[6]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z2")
+
+
+LATE_weight <- compute_average_weights(tp = "LATE",
+                                       dgp,
+                                       late.lb = 0.35,
+                                       late.ub = 0.9) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "LATE")
+
+LATE_weight_expanded <- compute_average_weights(tp = "LATE",
+                                                dgp,
+                                                late.lb = 0.35,
+                                                late.ub = 0.9) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "LATE")
+
+data <- d0z0_weight_expanded %>%
+  full_join(d1z0_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(d0z1_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(d1z1_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(d0z2_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(d1z2_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(LATE_weight_expanded,
+            by = c("u", "d"))
+
+bounds6 = compute_bounds(tp = late(dgp = dgp, u1 = 0.35, u2 = 0.9), 
+                         bases = list(constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ)),
+                                      constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ))),
+                         dgp = dgp,
+                         assumptions = list("saturated", "decreasing_MTR"))
+
+upperbound = signif(bounds6$upper_bound, digits = 3)
+lowerbound = signif(bounds6$lower_bound, digits = 3)
+
+uPoints <- c(0, 1, 0.35, 0.9, dgp$pscoreZ) %>%
+  unique() %>%
+  sort()
+
+constant_spline_weight <- data.frame(uStart = head(uPoints, -1),
+                                     uEnd = tail(uPoints, -1),
+                                     avgWeightD0 = bounds6$upper_solution_d0,
+                                     avgWeightD1 = bounds6$upper_solution_d1) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "Maximizing_MTRs")
+
+constant_spline_weight_expanded <- data.frame(uStart = head(uPoints, -1),
+                                              uEnd = tail(uPoints, -1),
+                                              avgWeightD0 = bounds6$upper_solution_d0,
+                                              avgWeightD1 = bounds6$upper_solution_d1) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "Maximizing_MTRs")
+
+figure.6 <- ggplot() +
+  geom_segment(data = constant_spline_weight,
+               aes(x = uStart,
+                   xend = uEnd,
+                   y = (Maximizing_MTRs-0.5)*6,
+                   yend = (Maximizing_MTRs-0.5)*6,
+                   color = "Maximizing MTRs"),
+               linewidth = 1) + 
+  geom_point(data = filter(constant_spline_weight_expanded, Maximizing_MTRs != 0, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = (Maximizing_MTRs-0.5)*12, color = "Maximizing MTRs", shape = "Maximizing MTRs")) + 
+  geom_line(data = filter(data, LATE != 0), 
+            aes(x = u, y = LATE, color = "LATE(0.35, 0.9)")) + 
+  geom_point(data = filter(data, LATE != 0, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = LATE, color = "LATE(0.35, 0.9)", shape = "LATE(0.35, 0.9)")) + 
+  geom_segment(data = filter(d0z0_weight, abs(d0z0) > 1e-12), 
+               aes(x = uStart, xend = uEnd, y = d0z0, color = "D0Z0")) + 
+  geom_point(data = filter(data, abs(d0z0) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d0z0, color = "D0Z0", shape = "D0Z0")) +
+  geom_segment(data = filter(d1z0_weight, abs(d1z0) > 1e-12), 
+               aes(x = uStart, xend = uEnd, y = d1z0, color = "D1Z0")) + 
+  geom_point(data = filter(data, abs(d1z0) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d1z0, color = "D1Z0", shape = "D1Z0")) +
+  geom_segment(data = filter(d0z1_weight, abs(d0z1) > 1e-12), 
+             aes(x = uStart, xend = uEnd, y = d0z1, color = "D0Z1")) + 
+  geom_point(data = filter(data, abs(d0z1) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d0z1, color = "D0Z1", shape = "D0Z1")) +
+  geom_segment(data = filter(d1z1_weight, abs(d1z1) > 1e-12), 
+               aes(x = uStart, xend = uEnd, y = d1z1, color = "D1Z1")) + 
+  geom_point(data = filter(data, abs(d1z1) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d1z1, color = "D1Z1", shape = "D1Z1")) +
+  geom_segment(data = filter(d0z2_weight, abs(d0z2) > 1e-12), 
+             aes(x = uStart, xend = uEnd, y = d0z2, color = "D0Z2")) + 
+  geom_point(data = filter(data, abs(d0z2) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d0z2, color = "D0Z2", shape = "D0Z2")) +
+  geom_segment(data = filter(d1z2_weight, abs(d1z2) > 1e-12), 
+               aes(x = uStart, xend = uEnd, y = d1z2, color = "D1Z2")) + 
+  geom_point(data = filter(data, abs(d1z2) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d1z2, color = "D1Z2", shape = "D1Z2")) +
+  scale_x_continuous(name = "u",
+                     limits = c(0,1),
+                     breaks = seq(0, 1, 0.2),
+                     labels = seq(0, 1, 0.2)) + 
+  scale_y_continuous(TeX("Weights (where \\neq 0)"),
+                     limits = c(-3, 3),
+                     breaks = seq(-2, 2, 2),
+                     sec.axis = sec_axis(transform = ~ ./6 + 0.5,
+                                         name = "MTR",
+                                         labels = seq(0, 1, 0.25))) + 
+  scale_color_manual(name = NULL,
+                     labels = c("Maximizing MTRs", 
+                                "LATE(0.35, 0.9)", 
+                                TeX("$(1-D) \\times 1[Z=0]$"), 
+                                TeX("$D \\times 1[Z=0]$"),
+                                TeX("$(1-D) \\times 1[Z=1]$"), 
+                                TeX("$D \\times 1[Z=1]$"),
+                                TeX("$(1-D) \\times 1[Z=2]$"), 
+                                TeX("$D \\times 1[Z=2]$")),
+                     breaks = c("Maximizing MTRs", 
+                                "LATE(0.35, 0.9)", 
+                                "D0Z0", 
+                                "D1Z0", 
+                                "D0Z1", 
+                                "D1Z1",
+                                "D0Z2", 
+                                "D1Z2"),
+                     values = c("black", "red", "blue", "orange", "brown", "green", "pink", "darkgreen")) + 
+  scale_shape_manual(name = NULL,
+                     labels = c("Maximizing MTRs", 
+                                "LATE(0.35, 0.9)", 
+                                TeX("$(1-D) \\times 1[Z=0]$"), 
+                                TeX("$D \\times 1[Z=0]$"),
+                                TeX("$(1-D) \\times 1[Z=1]$"), 
+                                TeX("$D \\times 1[Z=1]$"),
+                                TeX("$(1-D) \\times 1[Z=2]$"), 
+                                TeX("$D \\times 1[Z=2]$")),
+                     breaks = c("Maximizing MTRs", 
+                                "LATE(0.35, 0.9)", 
+                                "D0Z0", 
+                                "D1Z0", 
+                                "D0Z1", 
+                                "D1Z1",
+                                "D0Z2", 
+                                "D1Z2"),
+                     values = c(NA, 16, 17, 18, 10, 11, 12, 13)) + 
+  theme(legend.position = "bottom",
+        text = element_text(family = "LM Roman 10", size = 12),
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = "transparent", color = NA),
+        axis.line = element_line(color = "black"),
+        strip.background = element_rect(fill = "transparent", color = NA),
+        plot.title = element_text(hjust = 0.5)) +
+  facet_grid(cols = vars(d),
+             labeller = labeller(d = c("0" = "d = 0", "1" = "d = 1")))  + 
+  ggtitle(glue("Nonparametric bounds: [{lowerbound}, {upperbound}]"))
+
+figure.6
+```
+
+### Figure 7
+```{r, echo = FALSE, warning=FALSE, fig.height=5, fig.width = 7, fig.dpi=300}
+s_ivlike = make_slist(dgp)
+
+d0z0_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[1]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z0")
+
+d1z0_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[2]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z0")
+
+d0z1_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[3]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z1")
+
+d1z1_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[4]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z1")
+
+d0z2_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[5]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z2")
+
+d1z2_weight = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[6]]), dgp) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z2")
+
+d0z0_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[1]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z0")
+
+d1z0_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[2]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z0")
+
+d0z1_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[3]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z1")
+
+d1z1_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[4]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z1")
+
+d0z2_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[5]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d0z2")
+
+d1z2_weight_expanded = compute_average_weights_ivlike(list(name = "saturated", s = s_ivlike$s[[6]]), dgp) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "d1z2")
+
+LATE_weight <- compute_average_weights(tp = "LATE",
+                                       dgp,
+                                       late.lb = 0.35,
+                                       late.ub = 0.9) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "LATE")
+
+LATE_weight_expanded <- compute_average_weights(tp = "LATE",
+                                                dgp,
+                                                late.lb = 0.35,
+                                                late.ub = 0.9) %>%
+  expand_weights_df(u, .) %>%
+  pivot_longer(cols = c("avgWeightD1",
+                        "avgWeightD0"),
+               names_to = "d",
+               names_pattern = "(\\d)",
+               values_to = "LATE")
+
+data <- d0z0_weight_expanded %>%
+  full_join(d1z0_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(d0z1_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(d1z1_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(d0z2_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(d1z2_weight_expanded,
+            by = c("u", "d")) %>%
+  full_join(LATE_weight_expanded,
+            by = c("u", "d"))
+
+bounds7 = compute_bounds(tp = late(dgp = dgp, u1 = 0.35, u2 = 0.9), 
+                         bases = list(bernstein_basis(9),
+                                      bernstein_basis(9)),
+                         dgp = dgp,
+                         assumptions = list("saturated", "decreasing_MTR"))
+
+uPoints = seq(0, 1, 0.001)
+
+bernstein_mtr_d0 = data.frame(MTR = weighted_bernstein_basis(uPoints, 
+                                                             K = 9, 
+                                                             weights = bounds7$upper_solution_d0),
+                              u = uPoints,
+                              d = 0)
+
+bernstein_mtr_d1 = data.frame(MTR = weighted_bernstein_basis(uPoints, 
+                                                             K = 9, 
+                                                             weights = bounds7$upper_solution_d1),
+                              u = uPoints,
+                              d = 1)
+
+bernstein_mtr = rbind(bernstein_mtr_d0,
+                      bernstein_mtr_d1)
+
+upperbound = round(bounds7$upper_bound, digits = 3)
+lowerbound = round(bounds7$lower_bound, digits = 3)
+
+figure.7 = ggplot() +
+  geom_line(data = filter(data, LATE != 0), 
+            aes(x = u, y = LATE, color = "LATE(0.35, 0.9)")) + 
+  geom_point(data = filter(data, LATE != 0, u %in% round(seq(0.07, 1, 0.05), 2)), 
+             aes(x = u, y = LATE, color = "LATE(0.35, 0.9)", shape = "LATE(0.35, 0.9)")) + 
+  geom_segment(data = filter(d0z0_weight, abs(d0z0) > 1e-12), 
+               aes(x = uStart, xend = uEnd, y = d0z0, color = "D0Z0")) + 
+  geom_point(data = filter(data, abs(d0z0) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d0z0, color = "D0Z0", shape = "D0Z0")) +
+  geom_segment(data = filter(d1z0_weight, abs(d1z0) > 1e-12), 
+               aes(x = uStart, xend = uEnd, y = d1z0, color = "D1Z0")) + 
+  geom_point(data = filter(data, abs(d1z0) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d1z0, color = "D1Z0", shape = "D1Z0")) +
+  geom_segment(data = filter(d0z1_weight, abs(d0z1) > 1e-12), 
+             aes(x = uStart, xend = uEnd, y = d0z1, color = "D0Z1")) + 
+  geom_point(data = filter(data, abs(d0z1) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d0z1, color = "D0Z1", shape = "D0Z1")) +
+  geom_segment(data = filter(d1z1_weight, abs(d1z1) > 1e-12), 
+               aes(x = uStart, xend = uEnd, y = d1z1, color = "D1Z1")) + 
+  geom_point(data = filter(data, abs(d1z1) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d1z1, color = "D1Z1", shape = "D1Z1")) +
+  geom_segment(data = filter(d0z2_weight, abs(d0z2) > 1e-12), 
+             aes(x = uStart, xend = uEnd, y = d0z2, color = "D0Z2")) + 
+  geom_point(data = filter(data, abs(d0z2) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d0z2, color = "D0Z2", shape = "D0Z2")) +
+  geom_segment(data = filter(d1z2_weight, abs(d1z2) > 1e-12), 
+               aes(x = uStart, xend = uEnd, y = d1z2, color = "D1Z2")) + 
+  geom_point(data = filter(data, abs(d1z2) > 1e-12, u %in% round(seq(0.02, 1, 0.05), 2)), 
+             aes(x = u, y = d1z2, color = "D1Z2", shape = "D1Z2")) +
+    geom_line(data = bernstein_mtr, 
+            aes(x = u, y = (MTR-0.5)*6, color = "Maximizing MTRs"), linewidth = 1) +
+  geom_point(data = bernstein_mtr, 
+             aes(x = u, y = (MTR-0.5)*6, color = "Maximizing MTRs", shape = "Maximizing MTRs")) +
+  scale_x_continuous(name = "u",
+                     limits = c(0,1),
+                     breaks = seq(0, 1, 0.2),
+                     labels = seq(0, 1, 0.2)) + 
+  scale_y_continuous(name = TeX("Weights (where \\neq 0)"),
+                     limits = c(-3, 3),
+                     breaks = seq(-2, 2, 2),
+                     sec.axis = sec_axis(transform = ~ ./6 + 0.5,
+                                         name = "MTR",
+                                         labels = seq(0, 1, 0.25))) + 
+  scale_color_manual(name = NULL,
+                     labels = c("Maximizing MTRs", 
+                                "LATE(0.35, 0.9)", 
+                                TeX("$(1-D) \\times 1[Z=0]$"), 
+                                TeX("$D \\times 1[Z=0]$"),
+                                TeX("$(1-D) \\times 1[Z=1]$"), 
+                                TeX("$D \\times 1[Z=1]$"),
+                                TeX("$(1-D) \\times 1[Z=2]$"), 
+                                TeX("$D \\times 1[Z=2]$")),
+                     breaks = c("Maximizing MTRs", 
+                                "LATE(0.35, 0.9)", 
+                                "D0Z0", 
+                                "D1Z0", 
+                                "D0Z1", 
+                                "D1Z1",
+                                "D0Z2", 
+                                "D1Z2"),
+                     values = c("black", "red", "blue", "orange", "brown", "green", "pink", "darkgreen")) + 
+  scale_shape_manual(name = NULL,
+                     labels = c("Maximizing MTRs", 
+                                "LATE(0.35, 0.9)", 
+                                TeX("$(1-D) \\times 1[Z=0]$"), 
+                                TeX("$D \\times 1[Z=0]$"),
+                                TeX("$(1-D) \\times 1[Z=1]$"), 
+                                TeX("$D \\times 1[Z=1]$"),
+                                TeX("$(1-D) \\times 1[Z=2]$"), 
+                                TeX("$D \\times 1[Z=2]$")),
+                     breaks = c("Maximizing MTRs", 
+                                "LATE(0.35, 0.9)", 
+                                "D0Z0", 
+                                "D1Z0", 
+                                "D0Z1", 
+                                "D1Z1",
+                                "D0Z2", 
+                                "D1Z2"),
+                     values = c(NA, 16, 17, 18, 10, 11, 12, 13)) + 
+  theme(legend.position = "bottom",
+        text = element_text(family = "LM Roman 10", size = 12),
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = "transparent", color = NA),
+        axis.line = element_line(color = "black"),
+        strip.background = element_rect(fill = "transparent", color = NA),
+        plot.title = element_text(hjust = 0.5)) +
+  facet_grid(cols = vars(d),
+             labeller = labeller(d = c("0" = "d = 0", "1" = "d = 1"))) + 
+  ggtitle(glue("Order 9 polynomial bounds, MTRs decreasing: [{lowerbound}, {upperbound}]"))
+
+figure.7
+```
+
+### Figure 8
+```{r, echo = FALSE, warning=FALSE, fig.height=5, fig.width = 7, fig.dpi=300}
+results = data.frame(u = seq(0.4, 1, 0.005)) %>%
+  add_column(LB = NA,
+             UB = NA,
+             truth = NA)
+
+for(i in 1:nrow(results)){
+  tp = late(dgp, 0.35, results$u[i])
+  
+  r = compute_bounds(tp = tp, 
+                     bases = list(bernstein_basis(9),
+                                  bernstein_basis(9)),
+                     dgp = dgp,
+                     assumptions = list("saturated", "decreasing_MTR"))
+  
+  results$LB[i] = r$lower_bound
+  results$UB[i] = r$upper_bound
+  results$truth[i] = round(eval_tp(tp, list(dgp$mtrs[[1]], 
+                                            dgp$mtrs[[2]]),
+                                   dgp = dgp), 
+                           digits = 4)
+  
+}
+
+figure.8 = ggplot(data = results, aes(x = u)) +
+  geom_vline(xintercept = 0.9,
+             linetype = "dashed",
+             linewidth = 0.2) +
+  geom_line(aes(y = truth,
+                color = "Actual Value")) +
+  geom_line(aes(y = UB,
+                color = "Upper Bound")) +
+  geom_line(aes(y = LB,
+                color = "Lower Bound")) +
+  scale_y_continuous(name = NULL,
+                     limits = c(-.04, .13),
+                     breaks = seq(-0.025, 0.125, 0.025)) + 
+  scale_x_continuous(breaks = seq(0.4, 1, 0.05)) + 
+  scale_color_manual(name = NULL,
+                     breaks = c("Actual Value", "Upper Bound", "Lower Bound"),
+                     values = c("black", "red", "blue")) +
+  theme(legend.position = "bottom",
+        text = element_text(family = "LM Roman 10", size = 12),
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = "transparent", color = NA),
+        axis.line = element_line(color = "black"),
+        plot.title = element_text(hjust = 0.5)) +
+  ggtitle(TeX("Bounds on LATE(0.35, $\\bar{u}$)"))
+    
+figure.8
+```
