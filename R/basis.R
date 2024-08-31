@@ -7,9 +7,9 @@
 #' @param ib A list of functions for the 'ib' component.
 #' @return A list containing the components a, b, and ib.
 #' @export
-MTRBasis = function(a, b, ib) {
+MTRBasis = function(b, ib) {
   stopifnot(length(b) == length(ib))
-  list(a = a, b = b, ib = ib)
+  list(b = b, ib = ib)
 }
 
 #' Create a Bernstein basis
@@ -20,11 +20,10 @@ MTRBasis = function(a, b, ib) {
 #' @return An MTRBasis list for the Bernstein basis.
 #' @export
 bernstein_basis = function(K) {
-  a = list(function(z) 1)
   b = lapply(0:K, function(k) function(u) bernstein_polynomial(u, k, K))
   ib = lapply(0:K, function(k) function(lower_pt, upper_pt) integrate_bernstein_polynomial(lower_pt, upper_pt, k, K))
 
-  MTRBasis(a, b, ib)
+  MTRBasis(b, ib)
 }
 
 #' kth Bernstein basis polynomial of degree K
@@ -72,7 +71,8 @@ weighted_bernstein_basis = function(u, K, weights) {
   results = NULL
   for(j in u){
     results = results %>%
-      c(sum(sapply(1:length(basis_values), function(i) weights[i] * basis_values[[i]](j))))
+      c(sum(sapply(1:length(basis_values),
+                   function(i) weights[i] * basis_values[[i]](j))))
   }
 
   return(results)
@@ -92,8 +92,6 @@ constantspline_basis = function(knots) {
 
   knots = unique(sort(knots))
 
-  a = list(function(z) 1)
-
   in_partition = function(u, k) {
     if (k != tail(knots, n = 1)) {
       return(as.integer(knots[k - 1] <= u & u < knots[k]))
@@ -105,5 +103,5 @@ constantspline_basis = function(knots) {
   b = lapply(2:length(knots), function(k) function(u) in_partition(u, k))
   ib = lapply(2:length(knots), function(k) function(u, v) max(0, (min(v, knots[k]) - max(u, knots[k - 1]))))
 
-  MTRBasis(a, b, ib)
+  MTRBasis(b, ib)
 }

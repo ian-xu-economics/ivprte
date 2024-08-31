@@ -1331,8 +1331,9 @@ for(i in 1:nrow(results)){
   
   results$LB[i] = r$lower_bound
   results$UB[i] = r$upper_bound
-  results$truth[i] = round(eval_tp(tp, list(dgp$mtrs[[1]], 
-                                            dgp$mtrs[[2]]),
+  results$truth[i] = round(eval_tp(tp, 
+                                   list(dgp$mtrs[[1]], 
+                                        dgp$mtrs[[2]]),
                                    dgp = dgp), 
                            digits = 4)
   

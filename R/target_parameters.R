@@ -57,14 +57,12 @@ compute_gamma_star = function(tp, bases, dgp) {
 #' @return A Gamma_star matrix for the specific basis.
 #' @export
 compute_single_gamma_star = function(tp, basis, d, l, dgp) {
-  gamma_star = matrix(0, nrow=length(basis$a), ncol=length(basis$b))
+  gamma_star = matrix(0, nrow=1, ncol=length(basis$b))
   for (z in 1:length(dgp$suppZ)) {
     il = tp$int_limits(dgp$suppZ[z])
-    gamma_star = gamma_star + outer(
-      sapply(basis$a, function(aj) aj(dgp$suppZ[z])),
-      sapply(basis$ib, function(ibk) ibk(il[1], il[2])),
-      function(a, b) a * b * tp$int_constant(l, d, dgp$suppZ[z])
-    )
+    gamma_star = gamma_star + sapply(basis$ib, function(ibk) ibk(il[1], il[2])) *
+        tp$int_constant(l, d, dgp$suppZ[z])
+
   }
   return(gamma_star)
 }
