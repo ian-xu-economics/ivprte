@@ -45,7 +45,7 @@ olsslope = function(dgp) {
 #'
 #' @param dgp Data Generating Process object.
 #' @param support Support set for the indicator.
-#' @return A list containing the name, s function, support set, and legend titles.
+#' @return A list containing the name, s function, and support set.
 #'
 #' @importFrom glue glue
 #'
@@ -82,12 +82,7 @@ ivslope_indicator = function(dgp, support) {
     })
   })
 
-  legendtitle = c()
-  for (z in support) {
-    legendtitle = append(legendtitle, glue("IV Slope (1[Z = {z}])"))
-  }
-
-  ivlike = list(name = name, s = s, support = support, legendtitle = legendtitle)
+  ivlike = list(name = name, s = s, support = support)
 
   return(ivlike)
 }
@@ -95,7 +90,7 @@ ivslope_indicator = function(dgp, support) {
 #' Create Saturated IV-like List
 #'
 #' @param dgp Data Generating Process object.
-#' @return A list containing the name, s functions, and legend titles.
+#' @return A list containing the name, and s functions.
 #'
 #' @importFrom glue glue
 #'
@@ -114,18 +109,7 @@ make_slist = function(dgp) {
     combinations$z_bar,
     SIMPLIFY = FALSE)
 
-  d_string = c("(1 - D)", "D")
-  z_string = glue::glue("1[Z = {as.character(dgp$suppZ)}]")
-
-  # Create legend titles
-  legendtitle = c()
-  for (z in z_string) {
-    for (d in d_string) {
-      legendtitle = append(legendtitle, paste0(d, z))
-    }
-  }
-
-  ivlike = list(name = name, s = s, legendtitle = legendtitle)
+  ivlike = list(name = name, s = s)
 
   return(ivlike)
 }

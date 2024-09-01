@@ -12,6 +12,7 @@
 #'
 #' @importFrom stringr str_match str_split str_detect
 #' @importFrom rlang .data
+#' @importFrom lpSolve lp
 #'
 #' @export
 compute_bounds = function(tp, bases, dgp, assumptions = NULL){

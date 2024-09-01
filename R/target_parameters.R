@@ -3,14 +3,10 @@
 #' @param name Name of the target parameter.
 #' @param int_limits Function for integration limits.
 #' @param int_constant Function for integration constant.
-#' @param legendtitle Optional legend title.
 #' @return A list representing the target parameter.
 #' @export
-TargetParameter = function(name, int_limits, int_constant, legendtitle=NULL) {
-  if (is.null(legendtitle)) {
-    legendtitle = name
-  }
-  return(list(name=name, int_limits=int_limits, int_constant=int_constant, legendtitle=legendtitle))
+TargetParameter = function(name, int_limits, int_constant) {
+  return(list(name=name, int_limits=int_limits, int_constant=int_constant))
 }
 
 #' Evaluate Target Parameter
@@ -88,7 +84,6 @@ late = function(dgp, u1, u2, l = 1){
   int_constant = function(l, d, z){
     return((l==1)*(2*d-1)*dgp$find_density(z)/(u2-u1))
   }
-  legendtitle = glue::glue("LATE({u1}, {u2})")
 
-  return(TargetParameter(name, int_limits, int_constant, legendtitle))
+  return(TargetParameter(name, int_limits, int_constant))
 }

@@ -2,7 +2,6 @@
 #'
 #' This function creates an MTRBasis list containing three components: a, b, and ib.
 #'
-#' @param a A list of functions for the 'a' component.
 #' @param b A list of functions for the 'b' component.
 #' @param ib A list of functions for the 'ib' component.
 #' @return A list containing the components a, b, and ib.

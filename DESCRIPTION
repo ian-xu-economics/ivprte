@@ -20,5 +20,11 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
+Imports:
+    dplyr,
+    glue,
+    lpSolve,
+    rlang,
+    stringr
 Config/testthat/edition: 3
 VignetteBuilder: knitr
