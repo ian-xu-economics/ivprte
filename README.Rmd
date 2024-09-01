@@ -171,7 +171,7 @@ bounds2 = compute_bounds(tp = late(dgp = dgp, u1 = 0.35, u2 = 0.9),
             bases = list(constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ)),
                          constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ))),
             dgp = dgp,
-            assumptions = list("ivslope"))
+            ivslope = TRUE)
 
 upperbound = signif(bounds2$upper_bound, digits = 3)
 lowerbound = signif(bounds2$lower_bound, digits = 3)
@@ -300,7 +300,8 @@ bounds3 = compute_bounds(tp = late(dgp = dgp, u1 = 0.35, u2 = 0.9),
                          bases = list(constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ)),
                                       constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ))),
                          dgp = dgp,
-                         assumptions = list("ivslope", "olsslope"))
+                         ivslope = TRUE,
+                         olsslope = TRUE)
 
 upperbound = signif(bounds3$upper_bound, digits = 3)
 lowerbound = signif(bounds3$lower_bound, digits = 3)
@@ -457,7 +458,8 @@ bounds4 = compute_bounds(tp = late(dgp = dgp, u1 = 0.35, u2 = 0.9),
                          bases = list(constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ)),
                                       constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ))),
                          dgp = dgp,
-                         assumptions = list("ivslopeind, {1,2}"))
+                         ivslopeind = TRUE,
+                         params = list(ivslopeind = c(1,2)))
 
 upperbound = signif(bounds4$upper_bound, digits = 3)
 lowerbound = signif(bounds4$lower_bound, digits = 3)
@@ -675,7 +677,7 @@ bounds5 = compute_bounds(tp = late(dgp = dgp, u1 = 0.35, u2 = 0.9),
                          bases = list(constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ)),
                                       constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ))),
                          dgp = dgp,
-                         assumptions = list("saturated"))
+                         saturated = TRUE)
 
 upperbound = signif(bounds5$upper_bound, digits = 3)
 lowerbound = signif(bounds5$lower_bound, digits = 3)
@@ -937,7 +939,8 @@ bounds6 = compute_bounds(tp = late(dgp = dgp, u1 = 0.35, u2 = 0.9),
                          bases = list(constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ)),
                                       constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ))),
                          dgp = dgp,
-                         assumptions = list("saturated", "decreasing_MTR"))
+                         saturated = TRUE,
+                         decreasing.MTR = TRUE)
 
 upperbound = signif(bounds6$upper_bound, digits = 3)
 lowerbound = signif(bounds6$lower_bound, digits = 3)
@@ -1198,7 +1201,8 @@ bounds7 = compute_bounds(tp = late(dgp = dgp, u1 = 0.35, u2 = 0.9),
                          bases = list(bernstein_basis(9),
                                       bernstein_basis(9)),
                          dgp = dgp,
-                         assumptions = list("saturated", "decreasing_MTR"))
+                         saturated = TRUE,
+                         decreasing.MTR = TRUE)
 
 uPoints = seq(0, 1, 0.001)
 
@@ -1327,7 +1331,8 @@ for(i in 1:nrow(results)){
                      bases = list(bernstein_basis(9),
                                   bernstein_basis(9)),
                      dgp = dgp,
-                     assumptions = list("saturated", "decreasing_MTR"))
+                     saturated = TRUE,
+                     decreasing.MTR = TRUE)
   
   results$LB[i] = r$lower_bound
   results$UB[i] = r$upper_bound

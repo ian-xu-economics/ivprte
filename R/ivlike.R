@@ -167,15 +167,11 @@ compute_gamma_s = function(bases, dgp, slist, param = NA) {
 #' @export
 compute_gamma_s_for_basis = function(basis, d, dgp, slist, param = NA) {
 
-  if(slist == "ivslope"){
-    slist = list(ivslope(dgp)$s)
-  } else if(slist == "olsslope"){
-    slist = list(olsslope(dgp)$s)
-  } else if(slist == "ivslopeind"){
-    slist = ivslope_indicator(dgp, support = param)$s
-  } else if(slist == "saturated"){
-    slist = make_slist(dgp)$s
-  }
+  slist <- switch(slist,
+                  "olsslope" = list(olsslope(dgp)$s),
+                  "ivslope" = list(ivslope(dgp)$s),
+                  "ivslopeind" = ivslope_indicator(dgp, support = param)$s,
+                  "saturated" = make_slist(dgp)$s)
 
   # Initialize gamma_s
   gamma_s = array(0, dim = c(length(slist), length(basis$b)))
