@@ -24,7 +24,9 @@ compute_bounds = function(tp,
                           saturated = FALSE,
                           decreasing.MTR = FALSE,
                           params = NULL, # args should be some kind of list (e.g. list(ivslopeind = c()))
-                          moment.eqns = NULL){
+                          moment.eqns.const.mat = NULL,
+                          moment.eqns.const.dir = NULL,
+                          moment.eqns.const.rhs = NULL){
 
   objective.in = compute_gamma_star(tp = tp, bases, dgp = dgp)[[1]] %>%
     unlist()
@@ -160,14 +162,15 @@ compute_bounds = function(tp,
   }
 
   if(is.null(moment.eqns)){
+
     const.mat = rbind(const.mat,
-                      moment.eqns$const.mat)
+                      moment.eqns.const.mat)
 
     const.dir = c(const.dir,
-                  moment.eqns$const.dir)
+                  moment.eqns.const.dir)
 
     const.rhs = c(const.rhs,
-                  moment.eqns$const.rhs)
+                  moment.eqns.const.rhs)
   }
 
   Optimum_upper = lpSolve::lp(direction="max",objective.in,const.mat,const.dir,const.rhs)

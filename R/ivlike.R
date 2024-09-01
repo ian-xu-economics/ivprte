@@ -17,7 +17,7 @@ ivslope = function(dgp) {
     return((z - expZ) / covDZ)
   }
 
-  ivlike = list(name = name, s = s, extra_info = NULL)
+  ivlike = list(name = name, s = s)
 
   return(ivlike)
 }
@@ -37,8 +37,8 @@ olsslope = function(dgp) {
     return((d - prd1) / (prd1 * (1 - prd1)))
   }
 
-  IVLike = list(name = name, s = s, extra_info = NULL)
-  return(IVLike)
+  ivlike = list(name = name, s = s)
+  return(ivlike)
 }
 
 #' Compute IV Slope Indicator
