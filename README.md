@@ -6,27 +6,27 @@
 
 ## Introduction
 
-The `ReplicateMST2018` package…
+The `ivprte` package…
 
 ## Installation
 
-The `ReplicateMST2018` package is hosted on GitHub at
-<https://github.com/ian-xu-economics/ReplicateMST2018/>. It can be
-installed using the `remotes::install_github()` function:
+The `ivprte` package is hosted on GitHub at
+<https://github.com/ian-xu-economics/ivprte/>. It can be installed using
+the `remotes::install_github()` function:
 
 ``` r
 # install.packages("remotes")
-remotes::install_github("ian-xu-economics/ReplicateMST2018")
+remotes::install_github("ian-xu-economics/ivprte")
 ```
 
-## Using `ReplicateMST2018`
+## Using `ivprte`
 
-After installing `ReplicateMST2018`, we can attach the package to our
-session using the base `library()` function. We’ll also attach some
-other packages needed to run the examples in the vignette.
+After installing `ivprte`, we can attach the package to our session
+using the base `library()` function. We’ll also attach some other
+packages needed to run the examples in the vignette.
 
 ``` r
-library(ReplicateMST2018)
+library(ivprte)
 library(tidyverse)
 library(glue)
 library(latex2exp)
@@ -46,17 +46,15 @@ $Y \in \{0,1\}$ to be binary and restrict $\mathcal{M}$ to contain only
 MTR pairs that are bounded between 0 and 1. The data are generated using
 the MTR functions
 
-$$
-m_0(u) = 0.6b^2_0(u) + 0.4b^2_1(u) + 0.3b^2_2(u) \quad \text{ and}
-$$ $$
-m_1(u) = 0.75b^2_0(u) + 0.5b^2_1(u) + 0.25b^2_2(u)\text{,}
-$$ where $b^2_k$ is the $k$th Bernstein basis polynoial of degree 2.
+$m_0(u) = 0.6b^2_0(u) + 0.4b^2_1(u) + 0.3b^2_2(u)$, and
+$m_1(u) = 0.75b^2_0(u) + 0.5b^2_1(u) + 0.25b^2_2(u)$, where $b^2_k$ is
+the $k$th Bernstein basis polynoial of degree 2.
 
-This DGP has already been pre-programmed into `dgp_MST2018()`, so we’ll
-just save the DGP used in the paper into `dgp`.
+This DGP has already been pre-programmed into `dgp()`, so we’ll just
+save the DGP used in the paper into `dgp`.
 
 ``` r
-dgp <- dgp_MST2018()
+dgp <- dgp(MST2018 = TRUE)
 ```
 
 Because of the complexity of the code used to produce the figures, the
