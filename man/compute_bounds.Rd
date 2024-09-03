@@ -4,16 +4,39 @@
 \alias{compute_bounds}
 \title{Compute Bounds for Target Parameters}
 \usage{
-compute_bounds(tp, bases, dgp, assumptions = NULL)
+compute_bounds(
+  tp,
+  bases,
+  dgp,
+  olsslope = FALSE,
+  ivslope = FALSE,
+  ivslopeind = FALSE,
+  saturated = FALSE,
+  decreasing.MTR = FALSE,
+  params = NULL,
+  slist = NULL
+)
 }
 \arguments{
-\item{tp}{A list representing the target parameter.}
+\item{tp}{List representing the target parameter.}
 
-\item{bases}{A list of basis functions.}
+\item{bases}{List of basis functions.}
 
-\item{dgp}{A list representing the data generating process.}
+\item{dgp}{List representing the data generating process.}
 
-\item{assumptions}{A list of assumptions to be considered. Default is NULL.}
+\item{olsslope}{Boolean indicating if the MTR functions must satisfy \eqn{\beta_{OLS}}.}
+
+\item{ivslope}{Boolean indicating if the MTR functions must satisfy\eqn{\beta_{IV}}.}
+
+\item{ivslopeind}{Boolean indicating if the MTR functions must satisfy  \eqn{\beta_{IV (each components)}}.}
+
+\item{saturated}{Boolean indicating if the MTR functions must satisfy \eqn{\beta_{OLS (each components)}}.}
+
+\item{decreasing.MTR}{Boolean indicating if the MTR functions are restricted to be decreasing.}
+
+\item{params}{Arguments to be passed onto \code{compute_gamma_s()} or \code{compute_beta_s()}.}
+
+\item{slist}{List containing s(d, z) functions (functions must accept two parameters \code{d} and \code{z} in this order).}
 }
 \value{
 A list containing the upper and lower bounds along with their corresponding solutions.
@@ -21,4 +44,15 @@ A list containing the upper and lower bounds along with their corresponding solu
 \description{
 This function computes the upper and lower bounds for a given target parameter
 under specified assumptions using linear programming.
+}
+\examples{
+dgp <- dgp(MST2018 = TRUE)
+
+compute_bounds(tp = late(dgp = dgp, u1 = 0.35, u2 = 0.9),
+               bases = list(constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ)),
+                            constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ))),
+               dgp = dgp,
+               ivslopeind = TRUE,
+               params = list(ivslopeind = c(1,2)))
+
 }

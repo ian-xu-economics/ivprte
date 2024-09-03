@@ -148,11 +148,15 @@ compute_beta_s = function(dgp, slist, param = NA) {
 #' @param param Optional parameter for slist.
 #' @return A list of gamma_s arrays for each model.
 #' @export
-compute_gamma_s = function(bases, dgp, slist, param = NA) {
+compute_gamma_s = function(bases, dgp, slist, param = NULL) {
   # Placeholder for future functionality
   # d takes on value 0 and 1
   return(lapply(0:1, function(d) {
-    compute_gamma_s_for_basis(bases[[d + 1]], d, dgp, slist = slist, param = param)
+    compute_gamma_s_for_basis(bases[[d + 1]],
+                              d,
+                              dgp,
+                              slist = slist,
+                              param = param)
   }))
 }
 
@@ -165,13 +169,15 @@ compute_gamma_s = function(bases, dgp, slist, param = NA) {
 #' @param param Optional parameter for slist.
 #' @return A gamma_s array for the specific basis.
 #' @export
-compute_gamma_s_for_basis = function(basis, d, dgp, slist, param = NA) {
+compute_gamma_s_for_basis = function(basis, d, dgp, slist, param = NULL) {
 
-  slist <- switch(slist,
-                  "olsslope" = list(olsslope(dgp)$s),
-                  "ivslope" = list(ivslope(dgp)$s),
-                  "ivslopeind" = ivslope_indicator(dgp, support = param)$s,
-                  "saturated" = make_slist(dgp)$s)
+  if(is.character(slist)){
+    slist <- switch(slist,
+                    "olsslope" = list(olsslope(dgp)$s),
+                    "ivslope" = list(ivslope(dgp)$s),
+                    "ivslopeind" = ivslope_indicator(dgp, support = param)$s,
+                    "saturated" = make_slist(dgp)$s)
+  }
 
   # Initialize gamma_s
   gamma_s = array(0, dim = c(length(slist), length(basis$b)))

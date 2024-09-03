@@ -3,18 +3,33 @@
 #' This function computes the upper and lower bounds for a given target parameter
 #' under specified assumptions using linear programming.
 #'
-#' @param tp A list representing the target parameter.
-#' @param bases A list of basis functions.
-#' @param dgp A list representing the data generating process.
-#' @param assumptions A list of assumptions to be considered. Default is NULL.
-#'
+#' @param tp List representing the target parameter.
+#' @param bases List of basis functions.
+#' @param dgp List representing the data generating process.
+#' @param olsslope Boolean indicating if the MTR functions must satisfy \eqn{\beta_{OLS}}.
+#' @param ivslope Boolean indicating if the MTR functions must satisfy\eqn{\beta_{IV}}.
+#' @param ivslopeind Boolean indicating if the MTR functions must satisfy  \eqn{\beta_{IV (each components)}}.
+#' @param saturated Boolean indicating if the MTR functions must satisfy \eqn{\beta_{OLS (each components)}}.
+#' @param decreasing.MTR Boolean indicating if the MTR functions are restricted to be decreasing.
+#' @param params Arguments to be passed onto `compute_gamma_s()` or `compute_beta_s()`.
+#' @param slist List containing s(d, z) functions (functions must accept two parameters `d` and `z` in this order).
 #' @return A list containing the upper and lower bounds along with their corresponding solutions.
 #'
-#' @importFrom stringr str_match str_split str_detect
 #' @importFrom rlang .data
 #' @importFrom lpSolve lp
 #'
 #' @export
+#'
+#' @examples
+#' dgp <- dgp(MST2018 = TRUE)
+#'
+#' compute_bounds(tp = late(dgp = dgp, u1 = 0.35, u2 = 0.9),
+#'                bases = list(constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ)),
+#'                             constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ))),
+#'                dgp = dgp,
+#'                ivslopeind = TRUE,
+#'                params = list(ivslopeind = c(1,2)))
+#'
 compute_bounds = function(tp,
                           bases,
                           dgp,
@@ -24,18 +39,16 @@ compute_bounds = function(tp,
                           saturated = FALSE,
                           decreasing.MTR = FALSE,
                           params = NULL, # args should be some kind of list (e.g. list(ivslopeind = c()))
-                          moment.eqns.const.mat = NULL,
-                          moment.eqns.const.dir = NULL,
-                          moment.eqns.const.rhs = NULL){
+                          slist = NULL){
 
-  objective.in = compute_gamma_star(tp = tp, bases, dgp = dgp)[[1]] %>%
+  objective.in = compute_gamma_star(tp = tp, bases, dgp = dgp)[[1]] |>
     unlist()
 
   lenobj = length(objective.in)
 
   identity_matrix = diag(lenobj)
 
-  const.mat = identity_matrix %>%
+  const.mat = identity_matrix |>
     rbind(identity_matrix)
 
   const.rhs = c(rep.int(1, lenobj),
@@ -49,18 +62,18 @@ compute_bounds = function(tp,
     # Examples of such assumptions are olsslope and ivslope
     # If user wants to plug in their own thing, we will need to run `computer_gamma_s()` and computer_beta_s`, and add to `const.dir`
 
-    const.mat = const.mat %>%
+    const.mat = const.mat |>
       rbind(compute_gamma_s(bases = bases,
                             dgp = dgp,
-                            slist = "ivslope") %>%
+                            slist = "ivslope") |>
               unlist())
 
     beta_s_vector = compute_beta_s(dgp, "ivslope")
 
-    const.rhs = const.rhs %>%
+    const.rhs = const.rhs |>
       c(beta_s_vector)
 
-    const.dir = const.dir %>%
+    const.dir = const.dir |>
       c(rep("=", length(beta_s_vector)))
   }
 
@@ -69,18 +82,18 @@ compute_bounds = function(tp,
     # Examples of such assumptions are olsslope and ivslope
     # If user wants to plug in their own thing, we will need to run `computer_gamma_s()` and computer_beta_s`, and add to `const.dir`
 
-    const.mat = const.mat %>%
+    const.mat = const.mat |>
       rbind(compute_gamma_s(bases = bases,
                             dgp = dgp,
-                            slist = "olsslope") %>%
+                            slist = "olsslope") |>
               unlist())
 
     beta_s_vector = compute_beta_s(dgp, "olsslope")
 
-    const.rhs = const.rhs %>%
+    const.rhs = const.rhs |>
       c(beta_s_vector)
 
-    const.dir = const.dir %>%
+    const.dir = const.dir |>
       c(rep("=", length(beta_s_vector)))
   }
 
@@ -95,7 +108,7 @@ compute_bounds = function(tp,
     gamma_s_vector = compute_gamma_s(bases = bases,
                                      dgp = dgp,
                                      slist = "ivslopeind",
-                                     param = support) %>%
+                                     param = support) |>
       unlist()
 
     for(j in 1:length(support)){
@@ -145,32 +158,38 @@ compute_bounds = function(tp,
       m[i, i + 1] = -1
     }
 
-    m = m %>%
-      cbind(m0) %>%
-      rbind(m0 %>%
+    m = m |>
+      cbind(m0) |>
+      rbind(m0 |>
               cbind(m))
 
-    const.mat = const.mat %>%
+    const.mat = const.mat |>
       rbind(m)
 
-    const.rhs = const.rhs %>%
+    const.rhs = const.rhs |>
       c(rep(0, times = lenobj))
 
-    const.dir = const.dir %>%
+    const.dir = const.dir |>
       c(rep(">=", times = lenobj))
 
   }
 
-  if(is.null(moment.eqns)){
+  if(!is.null(slist)){
 
-    const.mat = rbind(const.mat,
-                      moment.eqns.const.mat)
+    const.mat = const.mat |>
+      rbind(compute_gamma_s(bases = bases,
+                            dgp = dgp,
+                            slist = slist) |>
+              unlist())
 
-    const.dir = c(const.dir,
-                  moment.eqns.const.dir)
+    beta_s_vector = compute_beta_s(dgp, slist)
 
-    const.rhs = c(const.rhs,
-                  moment.eqns.const.rhs)
+    const.rhs = const.rhs |>
+      c(beta_s_vector)
+
+    const.dir = const.dir |>
+      c(rep("=", length(beta_s_vector)))
+
   }
 
   Optimum_upper = lpSolve::lp(direction="max",objective.in,const.mat,const.dir,const.rhs)

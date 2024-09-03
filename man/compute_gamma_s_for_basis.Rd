@@ -4,7 +4,7 @@
 \alias{compute_gamma_s_for_basis}
 \title{Compute gamma_s for a given basis}
 \usage{
-compute_gamma_s_for_basis(basis, d, dgp, slist, param = NA)
+compute_gamma_s_for_basis(basis, d, dgp, slist, param = NULL)
 }
 \arguments{
 \item{basis}{Basis functions for a specific model.}

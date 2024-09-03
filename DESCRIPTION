@@ -24,7 +24,6 @@ Imports:
     dplyr,
     glue,
     lpSolve,
-    rlang,
-    stringr
+    rlang
 Config/testthat/edition: 3
 VignetteBuilder: knitr

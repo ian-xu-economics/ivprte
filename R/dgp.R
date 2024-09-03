@@ -76,20 +76,56 @@ DGP = R6::R6Class("DGP",
 #'
 #' This function creates a DGP object based on the MST2018 model.
 #'
+#' @param suppZ Support of Z.
+#' @param densZ Density of Z.
+#' @param pscoreZ Propensity score of Z.
+#' @param mtrs List of Marginal Treatment Response (MTR) functions.
+#' @param MST2018 A Boolean indicating whether to use the DGP in Mogstad, Santos, and Torgovitsy (2018).
+#'
 #' @return A new DGP object.
 #' @export
-dgp_MST2018 = function() {
-  suppZ = 0:2
-  densZ = c(0.5, 0.4, 0.1)
-  pscoreZ = c(0.35, 0.6, 0.7)
+#'
+#' @examples
+#' basis0 = bernstein_basis(2)
+#' theta0 = c(0.6, 0.4, 0.3)
+#' mtr0 = MTR(basis0, theta0)
+#'
+#' basis1 = bernstein_basis(2)
+#' theta1 = c(0.75, 0.5, 0.25)
+#' mtr1 = MTR(basis1, theta1)
+#'
+#' dgp(suppZ = 0:2,
+#'     densZ = c(0.5, 0.4, 0.1),
+#'     pscoreZ = c(0.35, 0.6, 0.7),
+#'     mtrs = list(mtr0, mtr1))
+#'
+dgp = function(suppZ = NULL,
+               densZ = NULL,
+               pscoreZ = NULL,
+               mtrs = NULL,
+               MST2018 = FALSE) {
 
-  basis0 = bernstein_basis(2)
-  theta0 = c(0.6, 0.4, 0.3)
-  mtr0 = MTR(basis0, theta0)
+  if(MST2018 == TRUE &&
+       !is.null(suppZ) &&
+       !is.null(densZ) &&
+       !is.null(pscoreZ) &&
+       !is.null(mtrs)){
+    stop("`MST2018` must be FALSE if `suppZ`, `densZ`, `pscoreZ`, and `mtrs` are not NULL.")
+  }
 
-  basis1 = bernstein_basis(2)
-  theta1 = c(0.75, 0.5, 0.25)
-  mtr1 = MTR(basis1, theta1)
+  if(MST2018 == TRUE){
+    suppZ = 0:2
+    densZ = c(0.5, 0.4, 0.1)
+    pscoreZ = c(0.35, 0.6, 0.7)
+
+    basis0 = bernstein_basis(2)
+    theta0 = c(0.6, 0.4, 0.3)
+    mtr0 = MTR(basis0, theta0)
+
+    basis1 = bernstein_basis(2)
+    theta1 = c(0.75, 0.5, 0.25)
+    mtr1 = MTR(basis1, theta1)
+  }
 
   return(DGP$new(suppZ, densZ, pscoreZ, list(mtr0, mtr1)))
 }
