@@ -201,3 +201,107 @@ ato <- function(dgp, l = 1){
 
 }
 
+#' Compute Target Parameter Population Values
+#'
+#' @param target.parameter A vector of target parameters.
+#' @param dgp Data Generating Process object.
+#' @param late.lb Lower limit for LATE.
+#' @param late.ub Upper limit for LATE.
+#'
+#' @return The population value for each target parameter.
+#' @export
+compute_population_value <- function(target.parameter = c("AUO", "ATO", "ATE", "ATT", "ATU", "LATE"),
+                                     dgp,
+                                     late.lb = NULL,
+                                     late.ub = NULL){
+
+  sapply(target.parameter,
+         function(x){
+           if(x == "AUO"){
+             tp <- auo(dgp)
+           } else if(x == "ATO"){
+             tp <- ato(dgp)
+           } else if(x == "ATE"){
+             tp <- ate(dgp)
+           } else if(x == "ATT"){
+             tp <- att(dgp)
+           } else if(x == "ATU"){
+             tp <- atu(dgp)
+           } else if(x == "LATE"){
+
+             if(is.null(late.lb) || is.null(late.ub)){
+               cli::cli_abort("'late.lb' and 'late.ub' must be specified when the target parameter is LATE.")
+             }
+
+             tp <- late(dgp, late.lb, late.ub)
+           } else{
+             cli::cli_abort(paste0(x, " is not a recognized target parameter."))
+           }
+
+           result <- eval_tp(tp,
+                             mtrs = dgp$mtrs,
+                             dgp = dgp)
+
+           return(result)
+         })
+
+}
+
+#' Compute Target Parameter Population Bounds
+#'
+#' @param target.parameter A vector of target parameters.
+#' @param dgp Data Generating Process object.
+#' @param bases A list of basis functions.
+#' @param late.lb Lower limit for LATE.
+#' @param late.ub Upper limit for LATE.
+#' @param assumptions A list of assumptions to be considered. Default is NULL.
+#' @param assumptions.extra A list of supplementary parameters that go along with the assumptions. Default is NULL.
+#'
+#' @return The population value for each target parameter.
+#' @export
+compute_population_bounds <- function(target.parameter = c("AUO", "ATO", "ATE", "ATT", "ATU", "LATE"),
+                                      dgp,
+                                      bases,
+                                      late.lb,
+                                      late.ub,
+                                      assumptions,
+                                      assumptions.extra){
+
+  sapply(target.parameter,
+         function(x){
+           if(x == "AUO"){
+             tp <- auo(dgp)
+           } else if(x == "ATO"){
+             tp <- ato(dgp)
+           } else if(x == "ATE"){
+             tp <- ate(dgp)
+           } else if(x == "ATT"){
+             tp <- att(dgp)
+           } else if(x == "ATU"){
+             tp <- atu(dgp)
+           } else if(x == "LATE"){
+
+             if(is.null(late.lb) || is.null(late.ub)){
+               cli::cli_abort("'late.lb' and 'late.ub' must be specified when the target parameter is LATE.")
+             }
+
+             tp <- late(dgp, late.lb, late.ub)
+           } else{
+             cli::cli_abort(paste0(x, " is not a recognized target parameter."))
+           }
+
+           result <- compute_bounds(tp,
+                                    bases,
+                                    dgp,
+                                    assumptions,
+                                    assumptions.extra)
+
+           return(c("lower.bound" = result$lower_bound,
+                    "upper.bound" = result$upper_bound))
+         }) |>
+    t()
+
+}
+
+
+

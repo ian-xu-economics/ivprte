@@ -131,3 +131,4 @@ dgp <- function(suppZ = NULL,
 
   return(DGP$new(suppZ, densZ, pscoreZ, mtrs))
 }
+
