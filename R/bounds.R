@@ -7,6 +7,7 @@
 #' @param bases A list of basis functions.
 #' @param dgp A list representing the data generating process.
 #' @param assumptions A list of assumptions to be considered. Default is NULL.
+#' @param assumptions.extra A list of supplementary parameters that go along with the assumptions. Default is NULL.
 #'
 #' @return A list containing the upper and lower bounds along with their corresponding solutions.
 #'
@@ -15,7 +16,11 @@
 #' @importFrom cli cli_abort
 #'
 #' @export
-compute_bounds <- function(target.parameter, bases, dgp, assumptions = NULL){
+compute_bounds <- function(target.parameter,
+                           bases,
+                           dgp,
+                           assumptions = NULL,
+                           assumptions.extra = NULL){
 
   objective.in <- compute_gamma_star(target.parameter = target.parameter, bases, dgp = dgp)[[1]] |>
     unlist()
@@ -37,10 +42,7 @@ compute_bounds <- function(target.parameter, bases, dgp, assumptions = NULL){
 
     if(stringr::str_detect(assumptions[[i]], "ivslopeind") == TRUE){
 
-      support <- stringr::str_match(assumptions[[i]], "\\{([\\d,]+)\\}")[,2] |>
-        stringr::str_split(pattern = ",") |>
-        unlist() |>
-        as.integer()
+      support <- assumptions.extra$ivslopeind
 
       gamma_s_vector <- compute_gamma_s(bases = bases,
                                         dgp = dgp,
@@ -124,8 +126,25 @@ compute_bounds <- function(target.parameter, bases, dgp, assumptions = NULL){
       const.dir <- const.dir %>%
         c(rep("=", length(beta_s_vector)))
 
+    } else if(assumptions[[i]] == "extra"){
+
+      if(nrow(assumptions.extra$lhs) != length(assumptions.extra$rhs)){
+        cli::cli_abort("The number of columns in the supplementary LHS matrix must be equal to the length of the supplementary RHS vector.")
+      }
+
+      if(length(assumptions.extra$rhs) != length(assumptions.extra$dir)){
+        cli::cli_abort("The length of the supplementary RHS vector must be equal to the length of the supplementary vector of signs.")
+      }
+
+      const.mat <- rbind(const.mat,
+                         assumptions.extra$lhs)
+
+      const.rhs <- c(const.rhs, assumptions.extra$rhs)
+
+      const.dir <- c(const.dir, assumptions.extra$dir)
+
     } else{
-      cli::cli_abort("Assumptions are not recognized. The options are 'olsslope', 'ivslope', 'ivslopeind{{a,b,...,c}}', 'saturated', and 'decreasing.MTR'.")
+      cli::cli_abort("Assumptions are not recognized. The options are 'olsslope', 'ivslope', 'ivslopeind{{a,b,...,c}}', 'saturated', 'decreasing.MTR', and 'extra'.")
     }
   }
 

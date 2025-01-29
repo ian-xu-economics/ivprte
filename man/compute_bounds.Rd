@@ -4,7 +4,13 @@
 \alias{compute_bounds}
 \title{Compute Bounds for Target Parameters}
 \usage{
-compute_bounds(target.parameter, bases, dgp, assumptions = NULL)
+compute_bounds(
+  target.parameter,
+  bases,
+  dgp,
+  assumptions = NULL,
+  assumptions.extra = NULL
+)
 }
 \arguments{
 \item{target.parameter}{A list representing the target parameter.}
@@ -14,6 +20,8 @@ compute_bounds(target.parameter, bases, dgp, assumptions = NULL)
 \item{dgp}{A list representing the data generating process.}
 
 \item{assumptions}{A list of assumptions to be considered. Default is NULL.}
+
+\item{assumptions.extra}{A list of supplementary parameters that go along with the assumptions. Default is NULL.}
 }
 \value{
 A list containing the upper and lower bounds along with their corresponding solutions.

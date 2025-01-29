@@ -72,7 +72,8 @@ test_that("Correct bounds for MST2018: Figure 4",{
                            bases = list(constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ)),
                                         constantspline_basis(c(0, 1, 0.35, 0.9, dgp$pscoreZ))),
                            dgp = dgp,
-                           assumptions = list("ivslopeind{1,2}"))
+                           assumptions = list("ivslopeind"),
+                           assumptions.extra = list(ivslopeind = 1:2))
 
   expect_equal(bounds4$upper_bound, 0.4074924, tolerance = 1e-6)
   expect_equal(bounds4$lower_bound, -0.3197803, tolerance = 1e-6)
