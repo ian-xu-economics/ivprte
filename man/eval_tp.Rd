@@ -4,10 +4,10 @@
 \alias{eval_tp}
 \title{Evaluate Target Parameter}
 \usage{
-eval_tp(tp, mtrs, dgp)
+eval_tp(target.parameter, mtrs, dgp)
 }
 \arguments{
-\item{tp}{Target parameter object.}
+\item{target.parameter}{Target parameter object.}
 
 \item{mtrs}{List of MTR objects.}
 

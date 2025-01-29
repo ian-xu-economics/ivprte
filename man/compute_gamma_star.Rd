@@ -4,10 +4,10 @@
 \alias{compute_gamma_star}
 \title{Compute Gamma Star for Each Model}
 \usage{
-compute_gamma_star(tp, bases, dgp)
+compute_gamma_star(target.parameter, bases, dgp)
 }
 \arguments{
-\item{tp}{Target parameter object.}
+\item{target.parameter}{Target parameter object.}
 
 \item{bases}{List of basis functions for each model.}
 

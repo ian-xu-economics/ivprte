@@ -1,13 +1,12 @@
 Package: ivprte
 Type: Package
 Title: The Title of the Project
-Version: 1.0.1
+Version: 1.1.0
 Authors@R: c(
     person(given   = "Ian",
            family  = "Xu",
            role    = c("aut", "cre", "cph"),
-           email   = "ianxu@uchicago.edu",
-           comment = c(ORCID = "{{orcid}}")))
+           email   = "ianxu@uchicago.edu"))
 Description: A paragraph providing a full description of the project (on 
     several lines...)
 URL: https://github.com/ian-xu-economics/ivprte
@@ -21,9 +20,11 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0)
 Imports:
+    cli,
     dplyr,
     glue,
     lpSolve,
-    rlang
+    rlang,
+    stringr
 Config/testthat/edition: 3
 VignetteBuilder: knitr

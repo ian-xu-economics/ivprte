@@ -4,10 +4,6 @@
 ![status](https://img.shields.io/badge/status-under%20construction-yellow)
 <!-- badges: end -->
 
-## Introduction
-
-The `ivprte` package…
-
 ## Installation
 
 The `ivprte` package is hosted on GitHub at

@@ -17,7 +17,7 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Ian Xu \email{ianxu@uchicago.edu} (\href{https://orcid.org/{{orcid}}}{ORCID}) [copyright holder]
+\strong{Maintainer}: Ian Xu \email{ianxu@uchicago.edu} [copyright holder]
 
 }
 \keyword{internal}

@@ -4,10 +4,10 @@
 \alias{compute_single_gamma_star}
 \title{Compute Single Gamma Star}
 \usage{
-compute_single_gamma_star(tp, basis, d, l, dgp)
+compute_single_gamma_star(target.parameter, basis, d, l, dgp)
 }
 \arguments{
-\item{tp}{Target parameter object.}
+\item{target.parameter}{Target parameter object.}
 
 \item{basis}{Basis functions for a specific model.}
 

@@ -5,7 +5,7 @@
 \title{Compute Average Weights for Target Parameters}
 \usage{
 compute_average_weights(
-  tp = c("AUO", "ATO", "ATE", "ATT", "ATU", "LATE"),
+  target.parameter = c("AUO", "ATO", "ATE", "ATT", "ATU", "LATE"),
   dgp = NULL,
   data = NULL,
   late.lb = NULL,
@@ -13,15 +13,15 @@ compute_average_weights(
 )
 }
 \arguments{
-\item{tp}{The target parameter to compute the average weights for.}
+\item{target.parameter}{The target parameter to compute the average weights for.}
 
 \item{dgp}{An optional DGP object containing the data generating process.}
 
 \item{data}{An optional data.frame from which the estimated weights are calculated from.}
 
-\item{late.lb}{Required when \code{tp} is set to "LATE", specifies the lower bound for integration.}
+\item{late.lb}{Required when \code{target.parameter} is set to "LATE", specifies the lower bound for integration.}
 
-\item{late.ub}{Required when \code{tp} is set to "LATE", specifies the upper bound for integration.}
+\item{late.ub}{Required when \code{target.parameter} is set to "LATE", specifies the upper bound for integration.}
 }
 \value{
 A data frame containing the average weights.
