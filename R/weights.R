@@ -47,15 +47,15 @@ compute_average_weights = function(target.parameter = c("AUO", "ATO", "ATE", "AT
 
       # Calculate P[Z = z] and P[D=1 | Z=z] from data
       summaryZDF <- data %>%
-        dplyr::group_by(.data$zvals) %>%
+        dplyr::group_by(.data$z) %>%
         dplyr::summarise(probZ = dplyr::n()/nrow(data),
-                         pscoreZ = sum(.data$dvals)/dplyr::n())
+                         pscoreZ = sum(.data$d)/dplyr::n())
 
-      suppZ <- summaryZDF$zvals
+      suppZ <- summaryZDF$z
       probZ <- summaryZDF$probZ
       pscoreZ <- summaryZDF$pscoreZ
 
-      probD1 <- mean(data$dvals)
+      probD1 <- mean(data$d)
 
     }
 
@@ -99,15 +99,15 @@ compute_average_weights = function(target.parameter = c("AUO", "ATO", "ATE", "AT
 
       # Calculate P[Z = z] and P[D=1 | Z=z] from data
       summaryZDF <- data %>%
-        dplyr::group_by(.data$zvals) %>%
+        dplyr::group_by(.data$z) %>%
         dplyr::summarise(probZ = n()/nrow(data),
-                         pscoreZ = sum(.data$dvals)/n())
+                         pscoreZ = sum(.data$d)/n())
 
-      suppZ <- summaryZDF$zvals
+      suppZ <- summaryZDF$z
       probZ <- summaryZDF$probZ
       pscoreZ <- summaryZDF$pscoreZ
 
-      probD0 <- mean(1 - data$dvals)
+      probD0 <- mean(1 - data$d)
 
     }
 
