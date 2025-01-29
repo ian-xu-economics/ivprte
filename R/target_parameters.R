@@ -172,7 +172,7 @@ auo <- function(dgp, l = 1){
   }
 
   int_constant <- function(l,d,z){
-    return((l==1)*(d-1))
+    return((l==1)*(1-d))
   }
 
   return(TargetParameter(name, int_limits, int_constant))
@@ -194,7 +194,7 @@ ato <- function(dgp, l = 1){
   }
 
   int_constant <- function(l,d,z){
-    return((l==1)*(d))
+    return((l==1)*d)
   }
 
   return(TargetParameter(name, int_limits, int_constant))
