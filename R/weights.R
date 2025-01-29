@@ -31,8 +31,8 @@ compute_average_weights = function(target.parameter = c("AUO", "ATO", "ATE", "AT
   } else if(target.parameter == "ATE"){
     weights <- data.frame(uStart = 0,
                           uEnd = 1,
-                          avgWeightD1 = -1,
-                          avgWeightD0 = 1)
+                          avgWeightD1 = 1,
+                          avgWeightD0 = -1)
   } else if(target.parameter == "ATT"){
 
     if(!is.null(dgp)){

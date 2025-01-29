@@ -1,7 +1,7 @@
 Package: ivprte
 Type: Package
 Title: The Title of the Project
-Version: 1.2.1
+Version: 1.2.2
 Authors@R: c(
     person(given   = "Ian",
            family  = "Xu",
