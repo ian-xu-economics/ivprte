@@ -18,7 +18,7 @@ get_weights = function(weights.df,
   stopifnot(typeof(nonZero) == "logical")
 
   # Define a small tolerance value
-  tol = 1e-12
+  tol <- 1e-12
 
   if(D == 1){ # Find
     new_weights.df <- weights.df %>%
@@ -39,7 +39,7 @@ get_weights = function(weights.df,
       dplyr::filter(abs(.data$avgWeight) > tol)
   }
 
-  rownames(new_weights.df) = 1:nrow(new_weights.df)
+  rownames(new_weights.df) <- 1:nrow(new_weights.df)
 
   return(new_weights.df)
 }
@@ -73,8 +73,8 @@ expand_weights_df <- function(u, weights.df){
                any(x >= weights.df$uStart & (x < weights.df$uEnd | (weights.df$uEnd == 1 & x <= 1))),
                weights.df$avgWeightD0[which(x >= weights.df$uStart & (x < weights.df$uEnd | (weights.df$uEnd == 1 & x <= 1)))],
                NA_real_))
-         }) %>%
-    t() %>%
+         }) |>
+    t() |>
     data.frame()
 
 }

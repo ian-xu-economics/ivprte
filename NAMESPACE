@@ -3,6 +3,7 @@
 export(MTR)
 export(MTRBasis)
 export(TargetParameter)
+export(att)
 export(bernstein_basis)
 export(bernstein_polynomial)
 export(compute_average_weights)

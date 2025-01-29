@@ -48,9 +48,11 @@ bernstein_polynomial = function(u, k, K) {
 #' @param K The degree of the Bernstein basis.
 #' @return The integral value.
 integrate_bernstein_polynomial = function(lower_pt, upper_pt, k, K) {
-  sum(sapply(k:K, function(i) {
-    (-1)^(i - k) * choose(K, i) * choose(i, k) * (upper_pt^(i + 1) - lower_pt^(i + 1)) / (i + 1)
-  }))
+  sapply(k:K,
+         function(i) {
+           (-1)^(i - k)*choose(K, i)*choose(i, k)*(upper_pt^(i + 1) - lower_pt^(i + 1))/(i + 1)
+         }) |>
+    sum()
 }
 
 #' Weighted Kth degree Bernstein basis polynomial
@@ -69,9 +71,10 @@ weighted_bernstein_basis = function(u, K, weights) {
 
   results = NULL
   for(j in u){
-    results = results %>%
+    results = results |>
       c(sum(sapply(1:length(basis_values),
-                   function(i) weights[i] * basis_values[[i]](j))))
+                   function(i) weights[i] * basis_values[[i]](j))
+            ))
   }
 
   return(results)

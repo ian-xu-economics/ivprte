@@ -4,7 +4,7 @@
 #' @param theta A matrix of coefficients for the basis functions.
 #' @return A list containing the basis functions and their coefficients (theta).
 #' @export
-MTR = function(basis, theta) {
+MTR <- function(basis, theta) {
   list(basis = basis, theta = theta)
 }
 
@@ -14,13 +14,13 @@ MTR = function(basis, theta) {
 #' @param u A vector containing the evaluation points u.
 #' @return A numeric vector containing the evaluated MTR values.
 #' @export
-evaluate_mtr = function(mtr, u) {
+evaluate_mtr <- function(mtr, u) {
 
   sapply(u,
-        function(x){
-          sapply(mtr$basis$b,
-                 function(f) f(x))
-        }) %>%
+         function(x){
+           sapply(mtr$basis$b,
+                  function(f) f(x))
+         }) |>
     t() %*%
     matrix(mtr$theta)
 
@@ -34,11 +34,11 @@ evaluate_mtr = function(mtr, u) {
 #' @export
 evaluate_mtr_tuple = function(mtrs, ev) {
 
-  result = numeric(nrow(ev))
+  result <- numeric(nrow(ev))
 
   for (d in 0:1) {
-    subset_ev = subset(ev, d == d)
-    result[d == ev$d] = evaluate_mtr(mtrs[[d + 1]], subset_ev)
+    subset_ev <- subset(ev, d == d)
+    result[d == ev$d] <- evaluate_mtr(mtrs[[d + 1]], subset_ev)
   }
 
   return(result)

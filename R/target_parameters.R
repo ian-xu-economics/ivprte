@@ -5,7 +5,7 @@
 #' @param int_constant Function for integration constant.
 #' @return A list representing the target parameter.
 #' @export
-TargetParameter = function(name, int_limits, int_constant) {
+TargetParameter <- function(name, int_limits, int_constant) {
   return(list(name=name, int_limits=int_limits, int_constant=int_constant))
 }
 
@@ -16,13 +16,13 @@ TargetParameter = function(name, int_limits, int_constant) {
 #' @param dgp Data Generating Process object.
 #' @return A numeric value representing the evaluated target parameter.
 #' @export
-eval_tp = function(tp, mtrs, dgp) {
+eval_tp <- function(tp, mtrs, dgp) {
 
-  gamma_star = compute_gamma_star(tp, list(mtrs[[1]]$basis, mtrs[[2]]$basis), dgp)
-  total = 0
+  gamma_star <- compute_gamma_star(tp, list(mtrs[[1]]$basis, mtrs[[2]]$basis), dgp)
+  total <- 0
   for (l in seq_along(mtrs)) {
     for (d in 0:1) {
-      total = total + sum(gamma_star[[l]][[d + 1]] * mtrs[[d + 1]]$theta)
+      total <- total + sum(gamma_star[[l]][[d + 1]] * mtrs[[d + 1]]$theta)
     }
   }
   return(total)
@@ -35,7 +35,7 @@ eval_tp = function(tp, mtrs, dgp) {
 #' @param dgp Data Generating Process object.
 #' @return A list of Gamma_star matrices for each model.
 #' @export
-compute_gamma_star = function(tp, bases, dgp) {
+compute_gamma_star <- function(tp, bases, dgp) {
   lapply(seq_along(bases), function(l) {
     lapply(0:1, function(d) {
       compute_single_gamma_star(tp, bases[[l]], d, l, dgp)
@@ -52,11 +52,11 @@ compute_gamma_star = function(tp, bases, dgp) {
 #' @param dgp Data Generating Process object.
 #' @return A Gamma_star matrix for the specific basis.
 #' @export
-compute_single_gamma_star = function(tp, basis, d, l, dgp) {
-  gamma_star = matrix(0, nrow=1, ncol=length(basis$b))
+compute_single_gamma_star <- function(tp, basis, d, l, dgp) {
+  gamma_star <- matrix(0, nrow=1, ncol=length(basis$b))
   for (z in 1:length(dgp$suppZ)) {
-    il = tp$int_limits(dgp$suppZ[z])
-    gamma_star = gamma_star + sapply(basis$ib, function(ibk) ibk(il[1], il[2])) *
+    il <- tp$int_limits(dgp$suppZ[z])
+    gamma_star <- gamma_star + sapply(basis$ib, function(ibk) ibk(il[1], il[2])) *
         tp$int_constant(l, d, dgp$suppZ[z])
 
   }
@@ -74,16 +74,40 @@ compute_single_gamma_star = function(tp, basis, d, l, dgp) {
 #' @importFrom glue glue
 #'
 #' @export
-late = function(dgp, u1, u2, l = 1){
+late <- function(dgp, u1, u2, l = 1){
   stopifnot(u1 <= u2)
 
-  name = "LATE(u1, u2)"
-  int_limits = function(z){
+  name <- "LATE(u1, u2)"
+  int_limits <- function(z){
     return(c(u1,u2))
   }
-  int_constant = function(l, d, z){
+  int_constant <- function(l, d, z){
     return((l==1)*(2*d-1)*dgp$find_density(z)/(u2-u1))
   }
 
   return(TargetParameter(name, int_limits, int_constant))
+}
+
+#' Create ATT Target Parameter
+#'
+#' @param dgp Data Generating Process object.
+#' @param l Model index (default is 1).
+#' @return A TargetParameter object for ATT.
+#' @export
+att <- function(dgp, l = 1){
+  prd1 <- sum(dgp$pscoreZ * dgp$densZ)
+
+  name <- "ATT"
+
+  int_limits <- function(z){
+    return(c(0, dgp$find_pscore(z)))
+  }
+
+  int_constant <- function(l,d,z){
+    return((l==1)*(2*d-1)/prd1*dgp$find_density(z))
+  }
+
+
+  return(TargetParameter(name, int_limits, int_constant))
+
 }
